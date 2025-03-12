@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pdf_reader/pages/pdf_page.dart';
+import 'package:pdf_reader/pages/pdf_page_2.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,7 +16,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: PDFViewerPage(pdfPath: 'assets/pdfs/cv.pdf'),
+      home: PdfPage2(path: 'assets/pdfs/cv.pdf'),
     );
   }
 }
