@@ -1,10 +1,9 @@
-import 'dart:async';
 import 'dart:developer';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_pdfview/flutter_pdfview.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:page_flip/page_flip.dart';
+import 'package:pdf_render/pdf_render_widgets.dart';
+import 'package:syncfusion_flutter_pdf/pdf.dart';
 
 class PdfPage2 extends StatefulWidget {
   final String path;
@@ -15,67 +14,85 @@ class PdfPage2 extends StatefulWidget {
 }
 
 class _PdfPage2State extends State<PdfPage2> {
-  int pages = 0;
-  bool isReady = false;
-  Completer<PDFViewController> controller = Completer<PDFViewController>();
-  String? filePath;
+  final pdfViewerController = PdfViewerController();
+  final pageFlipController = GlobalKey<PageFlipWidgetState>();
+  int totalPages = 0;
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    loadPdfFromAssets();
+    loadPageCount();
   }
 
-  Future<void> loadPdfFromAssets() async {
-    try {
-      // Load the PDF from assets
-      final byteData = await rootBundle.load(widget.path);
-      final tempDir = await getTemporaryDirectory();
-      final tempFile = File('${tempDir.path}/cv.pdf');
-      await tempFile.writeAsBytes(byteData.buffer.asUint8List());
+  // Loads the total page count of the PDF asynchronously.
+  Future<void> loadPageCount() async {
+    final count = await getPdfPageCount(widget.path);
+    if (mounted) {
       setState(() {
-        filePath = tempFile.path; // Update the filePath
+        totalPages = count;
+        isLoading = false; // Loading complete
       });
-      log('Temporary file path: $filePath');
+    }
+  }
+
+  /// Retrieves the total page count from the PDF document.
+  Future<int> getPdfPageCount(String pdfPath) async {
+    try {
+      final data = await rootBundle.load(pdfPath);
+      final document = PdfDocument(inputBytes: data.buffer.asUint8List());
+      final pageCount = document.pages.count;
+      document.dispose();
+      return pageCount;
     } catch (e) {
-      log('Error loading PDF from assets: $e');
+      log('Error loading PDF page count: $e');
+      return 0;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    log("rebuild");
     return Scaffold(
       body:
-          filePath == null
+          isLoading
               ? const Center(child: CircularProgressIndicator())
-              : PDFView(
-                filePath: filePath,
-                enableSwipe: true,
-                swipeHorizontal: true,
-                autoSpacing: true,
-                pageFling: true,
-                backgroundColor: Colors.grey,
-                onRender: (values) {
-                  setState(() {
-                    pages = values!;
-                    isReady = true;
-                  });
-                },
-                onError: (error) {
-                  log(error.toString());
-                },
-                onPageError: (page, error) {
-                  log('$page: ${error.toString()}');
-                },
-                onViewCreated: (PDFViewController pdfViewController) {
-                  !controller.isCompleted
-                      ? controller.complete(pdfViewController)
-                      : null;
-                },
-                onPageChanged: (page, total) {
-                  log('page change: $page/$total');
-                },
+              : PdfDocumentLoader.openAsset(
+                'assets/pdfs/cv.pdf',
+                documentBuilder:
+                    (context, pdfDocument, pageCount) => LayoutBuilder(
+                      builder:
+                          (context, constraints) => PageFlipWidget(
+                            children: [
+                              PdfPageView(
+                                pdfDocument: pdfDocument,
+                                pageNumber: 1,
+                              ),
+                            ],
+                          ),
+                    ),
               ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          pdfViewerController.setZoomRatio(zoomRatio: 1);
+        },
+        child: const Text("Go"),
+      ),
     );
+  }
+}
+
+class DemoPage extends StatefulWidget {
+  final int index;
+  const DemoPage({super.key, required this.index});
+
+  @override
+  State<DemoPage> createState() => _DemoPageState();
+}
+
+class _DemoPageState extends State<DemoPage> {
+  @override
+  Widget build(BuildContext context) {
+    return Center(child: Text("${widget.index}"));
   }
 }
