@@ -67,43 +67,41 @@ class _PdfPage2State extends State<PdfPage2>
       body:
           isLoading
               ? const Center(child: CircularProgressIndicator())
-              : GestureDetector(
-                child: PdfDocumentLoader.openAsset(
-                  'assets/pdfs/cv.pdf',
-                  documentBuilder: (context, pdfDocument, pageCount) {
-                    if (pageCount == 0) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
+              : PdfDocumentLoader.openAsset(
+                widget.path,
+                documentBuilder: (context, pdfDocument, pageCount) {
+                  if (pageCount == 0) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-                    return PageFlipWidget(
-                      key: pageFlipController,
+                  return PageFlipWidget(
+                    key: pageFlipController,
 
-                      cutoffForward: 1,
-                      cutoffPrevious: 1,
-                      initialIndex: 0,
-                      lastPage: Center(child: Text("THE END!")),
-                      children: [
-                        ...List.generate(pageCount, (index) {
-                          return PageFlipBuilder(
-                            isRightSwipe: false,
-                            amount: _animation,
-                            pageIndex: index,
-                            key: ValueKey(index),
-                            child: Center(
-                              child: Container(
-                                alignment: Alignment.center,
-                                width: MediaQuery.of(context).size.width,
-                                height: MediaQuery.of(context).size.height,
-                                color: Colors.white,
-                                child: PdfPageView(pageNumber: index + 1),
-                              ),
+                    cutoffForward: 1,
+                    cutoffPrevious: 1,
+                    initialIndex: 0,
+                    lastPage: Center(child: Text("THE END!")),
+                    children: [
+                      ...List.generate(pageCount, (index) {
+                        return PageFlipBuilder(
+                          isRightSwipe: false,
+                          amount: _animation,
+                          pageIndex: index,
+                          key: PageStorageKey(index + 1),
+                          child: Center(
+                            child: Container(
+                              alignment: Alignment.center,
+                              width: MediaQuery.of(context).size.width,
+                              height: MediaQuery.of(context).size.height,
+                              color: Colors.white,
+                              child: PdfPageView(pageNumber: index + 1),
                             ),
-                          );
-                        }),
-                      ],
-                    );
-                  },
-                ),
+                          ),
+                        );
+                      }),
+                    ],
+                  );
+                },
               ),
 
       floatingActionButton: FloatingActionButton(
